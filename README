@@ -1,0 +1,77 @@
+This is zen, the Hackable X server.
+
+In just 5500 lines of Common Lisp.
+
+
+
+INSTRUCTIONS : 
+
+You will need :
+Linux.
+A decent OpenGL driver, and therefore, unfortunately, a running X server :)    (to create a GLX context)
+SBCL with cl-opengl, CFFI, CLX, Skippy, CL-PPCRE, bordeaux-threads
+
+Starting zen :
+
+1) Identify the mouse and keyboard devices /dev/input/event<n> by reading /proc/bus/input/devices. Modify your input-devices.lisp accordingly.
+2) sudo chmod ugo+r /dev/input/*
+3) In SBCL , (compile-file "data/keys") 
+4) Load "start.lisp" in sbcl
+5) (start)
+... and if (when) you crash :
+6) (rst)
+
+Testing apps : in a terminal,
+export DISPLAY=127.0.0.1:3
+Then start your app.
+
+
+
+FUN WITH ZEN
+
+The 3 most interesting/fun things to hack on right now are :
+
+- Optimization. The low hanging fruit is here for you to pick up :) 
+
+  (require 'sb-sprof)
+  (sb-sprof:start-profiling :sample-interval 0.001 :threads :all :sampling t))
+  <run a slow app>
+  (sb-sprof:stop-profiling)
+  (sb-sprof:report)	
+  <see what happens>
+
+- Simplifying : zen could definitely become even leaner than it is now.
+
+- XRender implementation
+  (but potentially a big job)
+
+[Of course, there are also a large number of work items to turn zen into a 'production server', but that was never the point ! ]
+
+
+LIMITATIONS
+
+You will notice that zen is quite slow and buggy. Please feel free to report : zen crashes, and app crashes/exits that could be caused by X protocol bugs. 
+
+Most noticeable issing features :
+- All kinds of grabs
+- Various old fashioned rendering requests : CopyPlanes ; Arcs, and more
+- Most GC fields are ignored 
+- see also a whole section of unimplemented requests.
+
+
+
+* The bad (do not read this code !) :
+
+Font support : no use improving on this, as modern apps render them client-side anyway.
+SW cursor : no use improving on this either, this is a hack that wouldn't belong in a production server.
+
+
+CONTACT
+
+baccou@normalesup.org
+
+
+All the files in this package are (c) 2011 Pierre-Yves Baccou, unless specified otherwise.
+
+
+

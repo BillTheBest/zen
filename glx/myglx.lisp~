@@ -1,0 +1,245 @@
+;; (C) 2011 Pierre-Yves Baccou
+
+(in-package "MYGLX")
+
+(require 'cffi)
+
+(load "/home/pyb/zen/glx/constants.lisp")
+
+(defvar *glx-dpy* nil) ; any better name ?
+
+; For XOpenDisplay() and XFlush() only
+(define-foreign-library xlib
+  (t (:default "libX11")))
+(use-foreign-library xlib)
+
+; For the rest of GLX
+(define-foreign-library libogl
+  (t (:default "libGL")))
+(use-foreign-library libogl)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
+(defctype XID :unsigned-long)
+(defctype XVisualInfo :pointer)
+(defctype Font XID)
+(defctype Window XID)
+(defctype Pixmap XID)
+(defctype Display :pointer)
+
+(defctype glx-window :unsigned-long)
+(defctype glx-pixmap :unsigned-long)
+(defctype glx-pbuffer :unsigned-long)
+(defctype glx-drawable :unsigned-long)
+(defctype glx-fb-config :pointer)
+(defctype glx-context :pointer)
+) ; eval-when
+
+;; What to do with these non-GLX functions ?
+(defcfun "XOpenDisplay" Display
+  (display-name :pointer))
+(defcfun "XCloseDisplay" :int
+  (display-name Display))
+(defcfun "XFlush" :int
+  (display :pointer))
+
+
+(defcfun (%make-current "glXMakeCurrent") :boolean
+  (display :pointer)
+  (drawable glx-drawable)
+  (ctx glx-context))
+(defcfun (%swap-buffers "glXSwapBuffers") :void
+  (display :pointer)
+  (drawable glx-drawable))
+(defcfun (%choose-fb-config "glXChooseFBConfig") :pointer
+  (display :pointer)
+  (screen :int)
+  (attrib-list :pointer)
+  (nitems :pointer))
+(defcfun (%get-fb-config-attrib "glXGetFBConfigAttrib") :int
+  (display :pointer)
+  (config glx-fb-config)
+  (attribute :int)
+  (value :pointer))
+(defcfun (%get-visual-from-fb-config "glXGetVisualFromFBConfig") :pointer
+  (display :pointer)
+  (config glx-fb-config))
+(defcfun (%create-window "glXCreateWindow") glx-window 
+  (display :pointer)
+  (config glx-fb-config)
+  (win Window)
+  (attrib-list :pointer))
+(defcfun (%create-pbuffer "glXCreatePbuffer") glx-pbuffer
+  (display :pointer)
+  (config glx-fb-config)
+  (attribList :pointer))
+(defcfun (%create-new-context "glXCreateNewContext") glx-context
+  (display :pointer)
+  (config glx-fb-config)
+  (render-type :int)
+  (share-list glx-context)
+  (direct :boolean))
+(defcfun (%make-context-current "glXMakeContextCurrent") :boolean
+  (display :pointer)
+  (draw glx-drawable)
+  (read glx-drawable)
+  (ctx glx-context))
+
+(defcfun (wait-X "glXWaitX") :void)
+
+(defcfun (wait-GL "glXWaitGL") :void)
+
+(defcfun (%get-proc-address "glXGetProcAddress") :pointer
+  (procname :pointer))
+
+;; untested (translated rest of prototypes off /usr/include/GL/glx.h)
+(defcfun (%choose-visual "glXChooseVisual") :pointer
+  (dpy :pointer)
+  (screen :int)
+  (attrib-list :pointer))
+
+(defcfun (%create-context "glXCreateContext") glx-context
+  (dpy Display)
+  (vis XVisualInfo)
+  (share-list glx-context)
+  (direct :boolean))
+
+(defcfun (%destroy-context "glXDestroyContext") :void
+  (dpy Display)
+  (ctx glx-context))
+
+(defcfun (%copy-context "glXCopyContext") :void
+  (dpy Display)
+  (src glx-context)
+  (dst glx-context)
+  (mask :unsigned-long))
+
+(defcfun (%create-glx-pixmap "glXCreateGLXPixmap") glx-pixmap
+  (dpy Display)
+  (visual XVisualInfo)
+  (pixmap pixmap))
+
+(defcfun (%destroy-glx-pixmap "glXDestroyGLXPixmap") :void
+  (dpy Display)
+  (pixmap glx-pixmap))
+
+(defcfun (%query-extension "glXQueryExtension") :boolean
+  (dpy Display)
+  (error :pointer)
+  (event :pointer))
+
+(defcfun (%query-version "glXQueryVersion") :boolean
+  (dpy Display)
+  (maj :pointer)
+  (min :pointer))
+
+(defcfun (%is-direct "glXIsDirect") :boolean
+  (dpy Display)
+  (ctx glx-context))
+
+(defcfun (%get-config "glXGetConfig") :int
+  (dpy Display)
+  (visual XVisualInfo)
+  (attrib :int)
+  (value :pointer))
+
+(defcfun (%get-current-context "glXGetCurrentContext") glx-context)
+
+(defcfun (%getcurrent-drawable "glXGetCurrentDrawable") glx-drawable)
+
+(defcfun (%use-x-font "glXUseXFont") :void 
+  (font Font)
+  (first :int)
+  (count :int)
+  (list :int))
+
+(defcfun (%query-extensions-string "glXQueryExtensionsString") :pointer
+  (dpy Display)
+  (screen :int))
+
+(defcfun (%query-server-string "glXQueryServerString") :pointer
+  (dpy Display)
+  (screen :int)
+  (name :int))
+
+(defcfun (%get-client-string "glXGetClientString") :pointer
+  (dpy Display)
+  (name :int))
+
+(defcfun (%get-current-display "glXGetCurrentDisplay") Display)
+
+(defcfun (%get-fb-configs "glXGetFBConfigs") :pointer
+  (dpy Display)
+  (screen :int)
+  (nelements :pointer))
+
+(defcfun (%destroy-window "glXDestroyWindow") :void
+  (dpy Display)
+  (Window glx-window))
+
+(defcfun (%create-pixmap "glXCreatePixmap") glx-pixmap
+  (dpy Display)
+  (config glx-fb-config)
+  (pixmap pixmap)
+  (attriblist :pointer))
+
+(defcfun (%destroy-pixmap "glXDestroyPixmap") :void 
+  (dpy Display)
+  (pixmap glx-pixmap))
+
+(defcfun (%destroy-pbuffer "glXDestroyPbuffer") :void
+  (dpy Display)
+  (pbuf glx-pbuffer))
+
+(defcfun (%query-drawable "glXQueryDrawable") :void 
+  (dpy Display)
+  (draw glx-drawable)
+  (attribute :int)
+  (value :pointer))
+
+(defcfun (%get-current-read-drawable "glXGetCurrentReadDrawable") glx-drawable)
+
+(defcfun (%query-context "glXQueryContext") :int
+  (dpy Display)
+  (ctx glx-context)
+  (attribute :int)
+  (value :pointer))
+
+(defcfun (%select-event "glXSelectEvent") :void
+  (dpy Display)
+  (drawable glx-drawable)
+  (mask :unsigned-long))
+
+(defcfun (%get-selected-event "glXGetSelectedEvent") :void
+  (dpy Display)
+  (drawable glx-drawable)
+  (mask :unsigned-long))
+
+(defcfun (%bind-tex-image-ext "glXBindTexImageEXT") :void
+  (dpy Display)
+  (drawable glx-drawable)
+  (buffer :int)
+  (attrib-list :pointer))
+
+(defcfun (%release-tex-image-ext "glXReleaseTexImageEXT") :void
+  (dpy Display) 
+  (drawable glx-drawable)
+  (buffer :int))
+
+
+;; bin
+
+;; (defctype glx-window :unsigned-long)
+;; (defctype glx-pixmap :unsigned-long)
+;; (defctype glx-pbuffer :unsigned-long)
+;; (defctype glx-drawable :unsigned-long)
+;; (defctype glx-fb-config :pointer)
+;; (defctype glx-context :pointer)
+
+
+;; (defctype :Xid :unsigned-long)
+;; (defctype :XVisualInfo :pointer)
+;; (defctype Font :unsigned-long)
+;; (defctype :Window :unsigned-long)
+;; (defctype :Pixmap :unsigned-long)
+;; (defctype Display :pointer)
