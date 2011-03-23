@@ -2384,12 +2384,14 @@
 (defvar *w* nil)  ; the X window for zen to display in.
 (defvar *glx-w* nil)  ; and its matching GlxWindow.
 
+(defconstant +root-background-color+ #x000044)
+
 (defun zen-init ()
   (let ((rootwin (make-instance 'window
 				:id +root-id+
 				:parent nil
 				:class :InputOutput
-				:attr (make-instance 'attr :background-pixel #x00ff00 :border-pixmap nil :border-pixel 0)
+				:attr (make-instance 'attr :background-pixel +root-background-color+ :border-pixmap nil :border-pixel 0)
 				:visualid +visual-24+
 				:depth 24
 				:x 0 :y 0
