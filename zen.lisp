@@ -1536,7 +1536,7 @@
 		 :border-width (or border-width orig-border-width)
 		 :sibling sibling  ; can be nil
 		 :stack-mode (or stack-mode :Above)
-		 :value-mask (mapcan #'first
+		 :value-mask (mapcar #'first
 				     (delete nil
 					     `((:x ,x) (:y ,y) (:width ,width) (:height ,height) (:border-width ,border-width) (:sibling ,sibling) (:stack-mode ,stack-mode))
 					     :key #'second)))  ; list of args actually supplied to the 'request ConfigureWindow' call.
